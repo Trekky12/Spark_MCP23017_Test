@@ -1,3 +1,6 @@
+// This #include statement was automatically added by the Spark IDE.
+#include "MCP23017.h"
+
 /**************************************************************************
  * Example sketch using mizraith's expanded Adafruit_MCP23017.h library
  *
@@ -19,8 +22,6 @@
  * Released to public domain.  Enjoy!
  **************************************************************************/
 
-#include <Wire.h>
-#include "Adafruit_MCP23017.h"
 
 /******************************************************************************
  DATA CONNECTIONS:   (you're on your own for power/ground connections) 
@@ -36,8 +37,8 @@
     Be sure to set the address bits (A2A1A0) on your chip to match addressing below
     
  *******************************************************************************/
-#define LED_PIN 13 
-#define INT_PIN 2
+#define LED_PIN D7 
+#define INT_PIN D3
  
 Adafruit_MCP23017 mcp;
 
@@ -45,8 +46,8 @@ Adafruit_MCP23017 mcp;
 // You must bias address pins on device.  Nominal is to ground all 
 // three of a 000.   Example below has 001 set, so A0 is biased to VCC.
 // (last 3 bits are A2 A1 A0)  
-//uint8_t chipaddr = 0b00000000;
-uint8_t chipaddr = 0b00000001;    
+uint8_t chipaddr = 0b00000000;
+//uint8_t chipaddr = 0b00000001;    
 
 
 //-------------INTERRUPT AND OTHER GLOBALS--------------------------------------------
@@ -56,8 +57,6 @@ volatile unsigned long int_time = 0;
 //flag telling main loop to report on interrupt
 volatile boolean serviceint = false;        
 
-//In my case (bad button, no RC debounce), I find I cannot push button faster than 100ms anyway.
-#define DEBOUNCE_DELAY 200
 
 // storage for recording interrupt conditions
 int16_t intflagAB=0, intcapAB=0, valAB=0, btncnt=0;   
@@ -75,7 +74,7 @@ void setup() {
   uint8_t temp;
   uint16_t tempwide;
   
-  Serial.begin(57600);
+  Serial.begin(9600);
   pinMode(INT_PIN, INPUT);
 //  digitalWrite(INT_PIN, HIGH);  //set pullup -- not necessary in this case. Hi-Z is better
   
@@ -125,13 +124,14 @@ void setup() {
   //-------ENABLE ARDUINO INT0 interrupt routines------------------
   //-------do this before we start expecting to see interrupts-----
   //--------INT 0---------
-  EICRA = 0;               //clear it
+  /*EICRA = 0;               //clear it
   EICRA |= (1 << ISC01);
   EICRA |= (1 << ISC00);   //ISC0[1:0] = 0b11  rising edge INT0 creates interrupt
   EIMSK |= (1 << INT0);    //enable INT0 interrupt
   // Note:  instead of above, could use Arduino version of same
-  // attachInterrupt(0,  functionname , RISING);
-
+  */
+  attachInterrupt(INT_PIN,  interruptDetected , FALLING);
+    
   
   //--------ENABLE MCP INTERRUPTS  (default is off)-------------------
   mcp.setInterruptMirror( 1 );       //enable interrupt mirroring, so either port works
@@ -170,18 +170,7 @@ void setup() {
 
 
 
-/***************************************************
- *   ARDUINO INTERRUPT LOGIC
- ***************************************************/
-
-/**
- * It's important to keep this method TIGHT.  
- * We set a flag and move on, as doing anything real
- * (like Serial.print) can cause problems..many of
- * those commands use interrupts themselves.
- */
-ISR(INT0_vect) {
-//    EIFR = 0;
+void interruptDetected(){
     if(serviceint) {
       return;                             //the last int has not been serviced yet, could be a bounce
     } else {
@@ -192,8 +181,6 @@ ISR(INT0_vect) {
 //      Serial.println("Inside ISR0");    //for debugging only
     }
 }
-
-
 
 
 /***************************************************
@@ -229,7 +216,6 @@ void handleINT() {
     Serial.print(temp, DEC);
     Serial.println();
 
-    if(temp > DEBOUNCE_DELAY) {
       btncnt++;
       last_int_time = int_time;
       digitalWrite(LED_PIN, !digitalRead(LED_PIN));      //TOGGLE:  ^ 1);
@@ -261,18 +247,11 @@ void handleINT() {
       Serial.print(valAB, BIN);
       Serial.println();
       Serial.println();
-    } else {
-      Serial.print("-BOUNCE: ");
-      Serial.print(btncnt, DEC);
-      Serial.println();
-      Serial.println();
-
-      valAB = mcp.readGPIOAB();  //this will clear the MCP interrupt
-
-    }
+ 
     
-    delay(DEBOUNCE_DELAY);       //hack: Allow the user time to depress the button, or the MCP will interrupt again
     serviceint = false;
+    
+    delay(1000);
 
     
 }
