@@ -45,30 +45,26 @@
 
 
 
-#include <Wire.h>
-#include <avr/pgmspace.h>
-#include "Adafruit_MCP23017.h"
+#if defined (SPARK)
+    #include "MCP23017.h"
+#endif //Spark
 
-#if ARDUINO >= 100
- #include "Arduino.h"
-#else
- #include "WProgram.h"
-#endif
 
-// minihelper
+
+// minihelper to keep Arduino backward compatibility
 static inline void wiresend(uint8_t x) {
-#if ARDUINO >= 100
-  Wire.write((uint8_t)x);
+#if (ARDUINO >= 100) || defined (SPARK)
+	Wire.write((uint8_t) x);
 #else
-  Wire.send(x);
+	Wire.send(x);
 #endif
 }
 
 static inline uint8_t wirerecv(void) {
-#if ARDUINO >= 100
-  return Wire.read();
+#if (ARDUINO >= 100) || defined (SPARK)
+	return Wire.read();
 #else
-  return Wire.receive();
+	return Wire.receive();
 #endif
 }
 
@@ -787,10 +783,3 @@ uint16_t Adafruit_MCP23017::get2Registers(uint8_t reg) {
 
   return ba;
 }
-
-
-
-
-
-
-
