@@ -75,6 +75,11 @@ void setup() {
   uint16_t tempwide;
   
   Serial.begin(9600);
+  
+  while(!Serial.available())  // Wait here until the user presses ENTER 
+    SPARK_WLAN_Loop();        // in the Serial Terminal. Call the BG Tasks
+                              // while we are hanging around doing nothing.
+                              
   pinMode(INT_PIN, INPUT);
 //  digitalWrite(INT_PIN, HIGH);  //set pullup -- not necessary in this case. Hi-Z is better
   
@@ -137,8 +142,8 @@ void setup() {
   mcp.setInterruptMirror( 1 );       //enable interrupt mirroring, so either port works
   mcp.setInterruptPolarity ( 1 );    // 1= active high
 //  mcp.setInterruptControlAB( 0x0000);   //all pins interrupt on change only. Would catch button press & depress
-  mcp.setInterruptControlAB( 0xFFFF ); //all pins compared against a default value. interrupt on mismatch
-  mcp.setDefaultValueAB ( 0xFFFF);    //set default val for all pins to 1, since pullups enabled.
+  mcp.setInterruptControlAB( 0x0000 ); //all pins compared against a default value. interrupt on mismatch
+  //mcp.setDefaultValueAB ( 0xFFFF);    //set default val for all pins to 1, since pullups enabled.
   //finally
   mcp.setInterruptAB( 0xFFFF );      //enable interrupt on both ports for all pins
 
@@ -251,7 +256,5 @@ void handleINT() {
     
     serviceint = false;
     
-    delay(1000);
-
     
 }
